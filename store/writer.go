@@ -57,7 +57,7 @@ type timeRange struct {
 type Stream struct {
        Env             string    `json:"env"`        
 //       Id              string    `json:"id"`
-//       TraceIDLow      string    `json:"trace_id_low"`
+       TraceIDLow      string    `json:"trace_id_low"`
 //       TraceIDHigh     string    `json:"trace_id_high"`
 //       Flags           string    `json:"flags"`
 //       Duration        string    `json:"duration"`
@@ -198,7 +198,7 @@ func (w *Writer) WriteSpan(context context.Context, span *model.Span) error {
         } */
 
         startTime := span.StartTime.Format(time.RFC3339)
-        plogline := fmt.Sprintf("level=info caller=jaeger component=chunks service_name=\"%s\" operation_name=\"%s\" start_time=\"%s\" latency=\"%s\" duration=\"%s\" span_id=\"%s\" trace_id_low=\"%d\" trace_id_high=\"%d\" flags=\"%d\" tags=\"%s\" process_id=\"%s\" process_tags=\"%s\" warnings=\"%s\"", span.Process.ServiceName, span.OperationName, startTime, span.Duration, span.Duration, span.SpanID, span.TraceID.Low, span.TraceID.High, span.Flags, mapModelKV(span.Tags), span.ProcessID, mapModelKV(span.Process.Tags), span.Warnings)
+        plogline := fmt.Sprintf("level=info caller=jaeger component=chunks service_name=\"%s\" operation_name=\"%s\" start_time=\"%s\" latency=\"%s\" duration=\"%s\" span_id=\"%s\" trace_id_low=\"%d\" flags=\"%d\" tags=\"%s\" process_tags=\"%s\" warnings=\"%s\"", span.Process.ServiceName, span.OperationName, startTime, span.Duration, span.Duration, span.SpanID, span.TraceID.Low, span.Flags, mapModelKV(span.Tags), mapModelKV(span.Process.Tags), span.Warnings)
 
         var data Data
         /*
@@ -219,8 +219,8 @@ func (w *Writer) WriteSpan(context context.Context, span *model.Span) error {
         data = Data{
             []Streams{
                 {
-                    Stream{Env: "prod", ServiceName: span.Process.ServiceName, OperationName: span.OperationName},
-                    [][]interface{}{{time.Now().UnixNano(), plogline}},
+		    Stream{Env: "prod", TraceIDLow: fmt.Sprintf("%d", span.TraceID.Low), ServiceName: span.Process.ServiceName, OperationName: span.OperationName},
+		    [][]interface{}{{fmt.Sprint(time.Now().UnixNano()), plogline}},
                 },
             },
         }
@@ -232,7 +232,7 @@ func (w *Writer) WriteSpan(context context.Context, span *model.Span) error {
 
         //log.Println("result %s", string(result))
 
-	httpposturl := "http://localhost:4100/loki/api/v1/push"
+	httpposturl := "http://loki.monitoring.svc:3100/loki/api/v1/push"
 	//fmt.Println("HTTP JSON POST URL:", httpposturl)
 
 	request, error := http.NewRequest("POST", httpposturl, bytes.NewBuffer(result))
