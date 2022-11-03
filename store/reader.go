@@ -154,7 +154,7 @@ func GetSpansRange(r *Reader, fooLabelsWithName string, startTime time.Time, end
         var s_labels LokiData
 
         query   := url.QueryEscape(fooLabelsWithName)
-        httpurl := fmt.Sprintf("http://localhost:4100/loki/api/v1/query_range?direction=BACKWARD&limit=%d&query=%s&start=%d&end=%d", resultsLimit, query, startTime.UnixNano(), endTime.UnixNano())
+	httpurl := fmt.Sprintf("http://loki.monitoring.svc:3100/loki/api/v1/query_range?direction=BACKWARD&limit=%d&query=%s&start=%d&end=%d", resultsLimit, query, startTime.UnixNano(), endTime.UnixNano())
 
         response, err := http.Get(httpurl)
         if err != nil {
@@ -178,7 +178,7 @@ func GetSpans(limit uint32, fooLabelsWithName string) (sLokiData, error) {
         var s_labels sLokiData
 
         query   := url.QueryEscape(fooLabelsWithName)
-        httpurl := fmt.Sprintf("http://localhost:4100/loki/api/v1/query?query=%s&time=%d&limit=%d", query, time.Now().UnixNano(), limit)
+        httpurl := fmt.Sprintf("http://loki.monitoring.svc:3100/loki/api/v1/query?query=%s&time=%d&limit=%d", query, time.Now().UnixNano(), limit)
 
         response, err := http.Get(httpurl)
         if err != nil {
