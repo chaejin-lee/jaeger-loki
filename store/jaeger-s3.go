@@ -278,7 +278,7 @@ type Loki struct {
 // New makes a new Loki.
 func New(cfg Config, logger hclog.Logger) (*Loki, *Storag, func() error, error) {
         // needed for jaeger-s3
-        cfg.Server.HTTPListenPort = 4100
+        cfg.Server.HTTPListenPort = 3100
         cfg.AuthEnabled = false
 
 	loki := &Loki{
