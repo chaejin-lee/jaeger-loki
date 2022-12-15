@@ -1,4 +1,4 @@
-This is the repository that contains object storage (S3/GCS/AzureBlob) plugin for Jaeger.
+This is the repository that contains local loki object storage plugin for Jaeger.
 
 You are free to use this software under a permissive open-source MIT license.
 
@@ -7,15 +7,13 @@ To fund further work and maintenance on this plugin, work will be done by flitne
 If you require additional support for your infrastructure, you can contact [Sales](mailto:sales@flitnetics.com)
 
 ## About
-S3, Google Cloud Storage(GCS) and Microsoft Azure Blob Storage object storage support for Jaeger. 
 
-Amazon DynamoDB and Google BigTable for indexes should work as this code. 
+Local Grafana Loki object storage support for Jaeger.
 
-The configuration is mostly identical on how you configure storage, indexes, compactors, rulers, etc in [Loki](https://github.com/grafana/loki).
+The configuration is mostly identical on how you configure storage, indexes, compactors, rulers, etc in Loki.
 
 With this plugin, you won't need to run and maintain Tempo, at all!
 
-Works with [Kiali](https://kiali.io).
 
 **Version 2 of this plugin is not compatible with Version 1**
 
