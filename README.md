@@ -33,152 +33,7 @@ go build ./cmd/jaeger-objectstorage
 #### More info
 [https://grafana.com/docs/loki/latest/operations/storage/boltdb-shipper/](https://grafana.com/docs/loki/latest/operations/storage/boltdb-shipper/)
 
-Sample basic config (AWS):
-```
-schema_config:
-  configs:
-    - from: 2018-10-24
-      store: boltdb-shipper
-      object_store: s3
-      schema: v11
-      index:
-        prefix: index_
-        period: 24h
-      row_shards: 32
-
-storage_config:
-  aws:
-    region: ap-southeast-1
-    access_key_id: aws_access_key_id
-    secret_access_key: aws_secret_access_key
-    endpoint: s3.ap-southeast-1.amazonaws.com
-    http_config:
-      idle_conn_timeout: 90s
-      response_header_timeout: 0s
-  boltdb_shipper:
-    active_index_directory: /tmp/loki/boltdb-shipper-active
-    cache_location: /tmp/loki/boltdb-shipper-cache
-    cache_ttl: 24h
-    shared_store: s3
-  filesystem:
-    directory: /tmp/loki/chunks
-
-compactor:
-  working_directory: /tmp/loki/boltdb-shipper-compactor
-  shared_store: s3
-
-limits_config:
-  enforce_metric_name: false
-  reject_old_samples: true
-  reject_old_samples_max_age: 168h
-
-memberlist:
-  abort_if_cluster_join_fails: false
-
-  max_join_backoff: 1m
-  max_join_retries: 10
-  min_join_backoff: 1s
-
-distributor:
-  ring:
-    kvstore:
-      store: memberlist
-
-ingester:
-  lifecycler:
-    ring:
-      kvstore:
-        store: memberlist
-      replication_factor: 1
-    final_sleep: 0s
-  chunk_idle_period: 5m
-  chunk_retain_period: 30s
-```
-
-Changes for AWS with Retention for 28 days
-**(Update and add the necessary bits like above, ie. "compactor" and "table_manager")**
-```
-compactor:
-  working_directory: /tmp/loki/boltdb-shipper-compactor
-  shared_store: s3
-  compaction_interval: 10m
-  retention_enabled: true
-  retention_delete_delay: 2h
-  retention_delete_worker_count: 150
-
-table_manager:
-  retention_deletes_enabled: true
-  retention_period: 672h
-```
-
-Sample basic config (AWS with IRSA. example: EKS)
-
-**replace aws part of configuration above with URI style instead**
-```
-storage_config:
-  aws:
-    s3: s3://ap-southeast-1/yourbucket
-    http_config:
-      idle_conn_timeout: 90s
-      response_header_timeout: 0s
-```
-
-Sample basic config (GCS):
-**replace the necessary parts from the "Sample basic config (AWS)" above**
-```
-storage_config:
-  boltdb_shipper:
-    active_index_directory: /loki/boltdb-shipper-active
-    cache_location: /loki/boltdb-shipper-cache
-    cache_ttl: 24h         # Can be increased for faster performance over longer query periods, uses more disk space
-    shared_store: gcs
-  gcs:
-      bucket_name: <bucket>
-
-schema_config:
-  configs:
-    - from: 2020-07-01
-      store: boltdb-shipper
-      object_store: gcs
-      schema: v11
-      index:
-        prefix: index_
-        period: 24h
-      row_shards: 32
-
-compactor:
-  working_directory: /tmp/loki/boltdb-shipper-compactor
-  shared_store: gcs
-```
-
-Sample basic config (Azure BlobStorage):
-**replace the necessary parts from the "Sample basic config (AWS)" above**
-```
-schema_config:
-  configs:
-    - from: 2020-07-01
-      store: boltdb-shipper
-      object_store: azure
-      schema: v11  
-      index:
-        prefix: index_
-        period: 24h
-      row_shards: 32
-
-storage_config:
-  boltdb_shipper:
-    active_index_directory: /data/loki/index
-    shared_store: azure
-    cache_location: /data/loki/boltdb-cache
-  azure:
-    container_name: .. # add container name here
-    account_name: .. # add account name here
-    account_key: .. # add access key here
-
-compactor:
-  working_directory: /tmp/loki/boltdb-shipper-compactor
-  shared_store: azure
-```
+*  Can share with Grafana Loki configuration
 
 ## Start
 In order to start plugin just tell jaeger the path to a config compiled plugin.
@@ -236,7 +91,7 @@ spec:
   storage:
     type: grpc-plugin
     grpcPlugin:
-      image: ghcr.io/flitnetics/jaeger-objectstorage:latest
+      image: tmaxcloudck/jaeger-loki-plugin:v2.0.1
     options:
       grpc-storage-plugin:
         binary: /plugin/jaeger-objectstorage
@@ -251,70 +106,81 @@ spec:
         name: jaeger-objectstorage-config
 ---
 apiVersion: v1
-data:
-  config-example.yaml: |-
-    schema_config:
-      configs:
-        - from: 2018-10-24
-          store: boltdb-shipper
-          object_store: s3
-          schema: v11
-          index:
-            prefix: index_
-            period: 24h
-          row_shards: 32
-
-    storage_config:
-      aws:
-        bucketnames: yourbuckethere
-        region: ap-southeast-1
-        access_key_id: youraccesskey
-        secret_access_key: youraccesssecret
-        endpoint: s3.ap-southeast-1.amazonaws.com
-        http_config:
-          idle_conn_timeout: 90s
-          response_header_timeout: 0s
-      boltdb_shipper:
-        active_index_directory: /tmp/loki/boltdb-shipper-active
-        cache_location: /tmp/loki/boltdb-shipper-cache
-        cache_ttl: 24h         # Can be increased for faster performance over longer query periods, uses more disk space
-        shared_store: s3
-      filesystem:
-        directory: /tmp/loki/chunks
-
-    compactor:
-      working_directory: /tmp/loki/boltdb-shipper-compactor
-      shared_store: s3
-
-    limits_config:
-      enforce_metric_name: false
-      reject_old_samples: true
-      reject_old_samples_max_age: 168h
-
-    memberlist:
-      abort_if_cluster_join_fails: false
-
-      max_join_backoff: 1m
-      max_join_retries: 10
-      min_join_backoff: 1s
-
-    distributor:
-      ring:
-        kvstore:
-          store: memberlist
-
-    ingester:
-      lifecycler:
-        ring:
-          kvstore:
-            store: memberlist
-          replication_factor: 1
-        final_sleep: 0s
-      chunk_idle_period: 5m
-      chunk_retain_period: 30s
 kind: ConfigMap
 metadata:
   name: jaeger-objectstorage-config
+data:
+  config-example.yaml: |-
+  
+    auth_enabled: false
+    ingester:
+      chunk_idle_period: 5m
+      max_chunk_age: 1h
+      chunk_retain_period: 30s
+      max_transfer_retries: 0
+      wal:
+        enabled: false
+      lifecycler:
+        address: 0.0.0.0
+        ring:
+          replication_factor: 1
+          kvstore:
+            store: inmemory
+        final_sleep: 0s
+        
+    querier:
+      max_concurrent: 2048
+      query_ingesters_within: 0
+      query_timeout: 5m
+      
+    query_scheduler:
+      max_outstanding_requests_per_tenant: 2048
+      
+    limits_config:
+      retention_period: 168h # 7d
+      #retention_stream:
+      #- selector: '{namespace=""}' or '{pod_name=""}'
+      #  priority: 1
+      #  period: 24h ## 최소 설정 가능 기간 24h
+      enforce_metric_name: false
+      #reject_old_samples: true
+      #reject_old_samples_max_age: 72h
+      ingestion_rate_mb: 16
+      ingestion_burst_size_mb: 32
+      max_query_series: 100000
+      per_stream_rate_limit: 512mb
+      per_stream_rate_limit_burst: 1024mb
+      
+    schema_config:
+      configs:
+      - from: 2022-07-10
+        store: boltdb-shipper
+        object_store: filesystem
+        schema: v11
+        index:
+          prefix: index_
+          period: 24h
+    server:
+      http_listen_port: 3100
+      http_server_read_timeout: 5m
+      http_server_write_timeout: 5m
+     # log_level:
+
+    storage_config:
+      boltdb_shipper:
+        active_index_directory: /loki/index
+        cache_location: /loki/index_cache
+        cache_ttl: 24h         # Can be increased for faster performance over longer query periods, uses more disk space
+        shared_store: filesystem
+      filesystem:
+        directory: /loki/chunks
+    
+    compactor:
+      retention_enabled: true
+      retention_delete_delay: 30m
+      working_directory: /loki/compactor
+      shared_store: filesystem
+      
 ```
 
 ## License
